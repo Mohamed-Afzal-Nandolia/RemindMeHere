@@ -1,6 +1,5 @@
 package com.example.remindmehere.ui.components
 
-import android.content.Context
 import android.view.MotionEvent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,15 +13,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.remindmehere.theme.*
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
-import kotlin.math.cos
 
 @Composable
 fun LocationPickerMap(
@@ -36,17 +33,11 @@ fun LocationPickerMap(
     var pickedPoint by remember { mutableStateOf(initialLat?.let { GeoPoint(it, initialLng!!) }) }
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
-    // OSMDroid config
-    LaunchedEffect(Unit) {
-        Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
-        Configuration.getInstance().userAgentValue = "RemindMeHere/1.0"
-    }
-
     Box(modifier = modifier) {
         AndroidView(
             factory = { ctx ->
                 MapView(ctx).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
+                    setTileSource(CARTO_DARK)
                     setMultiTouchControls(true)
                     controller.setZoom(15.0)
                     controller.setCenter(pickedPoint ?: GeoPoint(20.5937, 78.9629)) // Default: India
@@ -139,3 +130,15 @@ private fun buildCircle(center: GeoPoint, radiusMeters: Double): Polygon {
         outlinePaint.strokeWidth = 2f
     }
 }
+
+/** CartoDB Dark Matter — free, no API key, dark-theme friendly */
+val CARTO_DARK = XYTileSource(
+    "CartoDB.DarkMatter",
+    0, 19, 256, ".png",
+    arrayOf(
+        "https://a.basemaps.cartocdn.com/dark_all/",
+        "https://b.basemaps.cartocdn.com/dark_all/",
+        "https://c.basemaps.cartocdn.com/dark_all/",
+        "https://d.basemaps.cartocdn.com/dark_all/"
+    )
+)

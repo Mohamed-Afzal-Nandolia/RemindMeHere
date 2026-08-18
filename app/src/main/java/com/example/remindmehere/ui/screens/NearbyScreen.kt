@@ -1,6 +1,5 @@
 package com.example.remindmehere.ui.screens
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,12 +21,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.remindmehere.data.model.ReminderStatus
-import com.example.remindmehere.data.model.ReminderType
 import com.example.remindmehere.theme.*
+import com.example.remindmehere.ui.components.CARTO_DARK
 import com.example.remindmehere.ui.components.ReminderCard
 import com.example.remindmehere.ui.viewmodel.DashboardViewModel
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -40,12 +36,6 @@ import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
     val locationReminders by vm.locationReminders.collectAsStateWithLifecycle()
     val active = locationReminders.filter { it.status == ReminderStatus.PENDING }
-    val context = LocalContext.current
-
-    LaunchedEffect(Unit) {
-        Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
-        Configuration.getInstance().userAgentValue = "RemindMeHere/1.0"
-    }
 
     Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -88,7 +78,7 @@ fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
             AndroidView(
                 factory = { ctx ->
                     MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
+                        setTileSource(CARTO_DARK)
                         setMultiTouchControls(true)
                         controller.setZoom(13.0)
 
