@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Radar
 import androidx.compose.material3.*
@@ -33,12 +34,12 @@ import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 @Composable
-fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
+fun NearbyScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory: () -> Unit) {
     val locationReminders by vm.locationReminders.collectAsStateWithLifecycle()
     val active = locationReminders.filter { it.status == ReminderStatus.PENDING }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
+        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
 
             // Header
             Box(
@@ -48,7 +49,7 @@ fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
                     .padding(top = 56.dp, bottom = 16.dp, start = 20.dp, end = 20.dp)
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Outlined.Radar, null, tint = CyanAccent, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Nearby", style = MaterialTheme.typography.labelLarge, color = CyanAccent)
@@ -63,6 +64,10 @@ fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
                             }
+                        }
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = onNavigateToHistory) {
+                            Icon(Icons.Outlined.History, contentDescription = "History", tint = CyanAccent)
                         }
                     }
                     Spacer(Modifier.height(4.dp))
@@ -133,7 +138,9 @@ fun NearbyScreen(vm: DashboardViewModel = hiltViewModel()) {
                         )
                     }
                     items(locationReminders, key = { it.id }) { reminder ->
-                        ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                        Box(modifier = Modifier.animateItem()) {
+                            ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                        }
                     }
                 }
             }

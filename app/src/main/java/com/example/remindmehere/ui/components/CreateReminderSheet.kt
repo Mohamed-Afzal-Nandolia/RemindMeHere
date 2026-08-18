@@ -66,105 +66,108 @@ fun CreateReminderSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .imePadding()
+                .imePadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Step indicator
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StepDot(active = step >= 1, label = "1")
-                    Box(modifier = Modifier.width(24.dp).height(2.dp).background(if (step >= 2) VioletPrimary else CardBorder))
-                    StepDot(active = step >= 2, label = "2")
-                }
-                Spacer(Modifier.weight(1f))
-                Text(
-                    text = if (step == 1) "What to remember?" else "When / Where?",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = OnSurface
-                )
-            }
-
-            Spacer(Modifier.height(20.dp))
-
-            // Error
-            state.error?.let { err ->
-                Text(
-                    text = err,
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    color = ErrorColor,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            AnimatedContent(targetState = step, label = "step") { s ->
-                when (s) {
-                    1 -> StepOne(state.title, state.note, viewModel::updateTitle, viewModel::updateNote)
-                    2 -> StepTwo(
-                        type = state.type,
-                        triggerAt = state.triggerAt,
-                        radiusMeters = state.radiusMeters,
-                        pickedLat = state.latitude,
-                        pickedLng = state.longitude,
-                        onTypeChange = viewModel::updateType,
-                        onTimeChange = viewModel::updateTriggerAt,
-                        onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) },
-                        onRadiusChange = viewModel::updateRadius,
-                        context = context
+            Column(modifier = Modifier.widthIn(max = 600.dp)) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Step indicator
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        StepDot(active = step >= 1, label = "1")
+                        Box(modifier = Modifier.width(24.dp).height(2.dp).background(if (step >= 2) VioletPrimary else CardBorder))
+                        StepDot(active = step >= 2, label = "2")
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(
+                        text = if (step == 1) "What to remember?" else "When / Where?",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = OnSurface
                     )
                 }
-            }
 
-            Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
 
-            // Buttons
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (step == 2) {
-                    OutlinedButton(
-                        onClick = { step = 1 },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted),
-                        border = BorderStroke(1.dp, CardBorder)
-                    ) { Text("Back") }
+                // Error
+                state.error?.let { err ->
+                    Text(
+                        text = err,
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        color = ErrorColor,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
                 }
 
-                Button(
-                    onClick = {
-                        if (step == 1) {
-                            if (state.title.isBlank()) { viewModel.clearError(); return@Button }
-                            viewModel.clearError()
-                            step = 2
-                        } else {
-                            viewModel.save()
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = VioletPrimary),
-                    enabled = !state.isLoading
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = OnPrimary
+                AnimatedContent(targetState = step, label = "step") { s ->
+                    when (s) {
+                        1 -> StepOne(state.title, state.note, viewModel::updateTitle, viewModel::updateNote)
+                        2 -> StepTwo(
+                            type = state.type,
+                            triggerAt = state.triggerAt,
+                            radiusMeters = state.radiusMeters,
+                            pickedLat = state.latitude,
+                            pickedLng = state.longitude,
+                            onTypeChange = viewModel::updateType,
+                            onTimeChange = viewModel::updateTriggerAt,
+                            onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) },
+                            onRadiusChange = viewModel::updateRadius,
+                            context = context
                         )
-                    } else {
-                        Text(if (step == 1) "Next" else "Save Reminder")
                     }
                 }
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
+
+                // Buttons
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (step == 2) {
+                        OutlinedButton(
+                            onClick = { step = 1 },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurfaceMuted),
+                            border = BorderStroke(1.dp, CardBorder)
+                        ) { Text("Back") }
+                    }
+
+                    Button(
+                        onClick = {
+                            if (step == 1) {
+                                if (state.title.isBlank()) { viewModel.clearError(); return@Button }
+                                viewModel.clearError()
+                                step = 2
+                            } else {
+                                viewModel.save()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = VioletPrimary),
+                        enabled = !state.isLoading
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = OnPrimary
+                            )
+                        } else {
+                            Text(if (step == 1) "Next" else "Save Reminder")
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+            }
         }
     }
 }
@@ -250,41 +253,24 @@ private fun StepTwo(
         AnimatedContent(targetState = type, label = "type") { t ->
             when (t) {
                 ReminderType.TIME -> {
-                    // Show date/time picker button
-                    val cal = remember { Calendar.getInstance() }
-                    val label = triggerAt?.let {
-                        SimpleDateFormat("EEE, MMM d  •  h:mm a", Locale.getDefault()).format(Date(it))
-                    } ?: "Tap to choose date & time"
-
-                    Column {
-                        Surface(
-                            color = NavyContainer,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    DatePickerDialog(
-                                        context,
-                                        { _, y, m, d -> cal.set(y, m, d)
-                                            TimePickerDialog(context, { _, h, min ->
-                                                cal.set(Calendar.HOUR_OF_DAY, h); cal.set(Calendar.MINUTE, min); cal.set(Calendar.SECOND, 0)
-                                                onTimeChange(cal.timeInMillis)
-                                            }, cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), false).show()
-                                        },
-                                        cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
-                                    ).show()
-                                }
-                                .border(1.dp, if (triggerAt != null) VioletPrimary.copy(0.5f) else CardBorder, RoundedCornerShape(12.dp))
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Outlined.CalendarMonth, null, tint = VioletPrimary, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(12.dp))
-                                Text(label, color = if (triggerAt != null) OnSurface else OnSurfaceMuted, style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(NavyContainer)
+                            .border(1.dp, VioletPrimary.copy(0.3f), RoundedCornerShape(12.dp))
+                            .padding(vertical = 12.dp)
+                    ) {
+                        Text(
+                            text = "Select Date & Time",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = OnSurfaceMuted,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        WheelDateTimePicker(
+                            initialTime = triggerAt ?: System.currentTimeMillis(),
+                            onTimeChanged = onTimeChange
+                        )
                     }
                 }
                 ReminderType.LOCATION -> {

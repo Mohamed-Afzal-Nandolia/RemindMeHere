@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,13 +26,13 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel()) {
+fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory: () -> Unit) {
     val reminders by vm.timeReminders.collectAsStateWithLifecycle()
     val pending = reminders.filter { it.status == ReminderStatus.PENDING }
     val triggered = reminders.filter { it.status == ReminderStatus.TRIGGERED }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
+        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
 
             // Header
             Box(
@@ -41,10 +42,14 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel()) {
                     .padding(top = 56.dp, bottom = 24.dp, start = 20.dp, end = 20.dp)
             ) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Outlined.Schedule, null, tint = VioletLight, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Upcoming", style = MaterialTheme.typography.labelLarge, color = VioletLight)
+                        Spacer(Modifier.weight(1f))
+                        IconButton(onClick = onNavigateToHistory) {
+                            Icon(Icons.Outlined.History, contentDescription = "History", tint = VioletLight)
+                        }
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -73,7 +78,7 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel()) {
                             SectionLabel("Upcoming (${pending.size})")
                         }
                         items(pending, key = { it.id }) { reminder ->
-                            Column {
+                            Column(modifier = Modifier.animateItem()) {
                                 ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
                                 reminder.triggerAt?.let { at ->
                                     val diff = at - System.currentTimeMillis()
@@ -97,7 +102,9 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel()) {
                     if (triggered.isNotEmpty()) {
                         item { Spacer(Modifier.height(8.dp)); SectionLabel("Triggered (${triggered.size})") }
                         items(triggered, key = { it.id }) { reminder ->
-                            ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                            Box(modifier = Modifier.animateItem()) {
+                                ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                            }
                         }
                     }
                 }

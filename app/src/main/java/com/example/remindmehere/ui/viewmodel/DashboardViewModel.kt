@@ -15,6 +15,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,13 +28,20 @@ class DashboardViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    val allReminders: StateFlow<List<Reminder>> = repository.allReminders
+    val activeReminders: StateFlow<List<Reminder>> = repository.allReminders
+        .map { list -> list.filter { it.status != com.example.remindmehere.data.model.ReminderStatus.DONE } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val historyReminders: StateFlow<List<Reminder>> = repository.allReminders
+        .map { list -> list.filter { it.status == com.example.remindmehere.data.model.ReminderStatus.DONE } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val timeReminders: StateFlow<List<Reminder>> = repository.timeReminders
+        .map { list -> list.filter { it.status != com.example.remindmehere.data.model.ReminderStatus.DONE } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val locationReminders: StateFlow<List<Reminder>> = repository.locationReminders
+        .map { list -> list.filter { it.status != com.example.remindmehere.data.model.ReminderStatus.DONE } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun markDone(reminder: Reminder) {
