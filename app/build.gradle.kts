@@ -7,10 +7,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.remindmehere"
+    namespace = "com.remindmehere.app"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.example.remindmehere"
+        applicationId = "com.remindmehere.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
