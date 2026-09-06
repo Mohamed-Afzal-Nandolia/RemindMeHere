@@ -29,8 +29,8 @@ fun HistoryScreen(
 ) {
     val history by dashboardVm.historyReminders.collectAsStateWithLifecycle()
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Header
             Row(
                 modifier = Modifier

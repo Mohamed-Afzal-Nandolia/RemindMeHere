@@ -31,8 +31,8 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory
     val pending = reminders.filter { it.status == ReminderStatus.PENDING }
     val triggered = reminders.filter { it.status == ReminderStatus.TRIGGERED }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             // Header
             Box(

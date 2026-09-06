@@ -65,12 +65,13 @@ fun CreateReminderSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = 1000.dp)
                 .navigationBarsPadding()
-                .imePadding(),
+                .imePadding()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.widthIn(max = 600.dp)) {
-                // Header
+            // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -166,8 +167,7 @@ fun CreateReminderSheet(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
-            }
+                Spacer(Modifier.height(48.dp))
         }
     }
 }
@@ -233,7 +233,6 @@ private fun StepTwo(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
         // Type toggle

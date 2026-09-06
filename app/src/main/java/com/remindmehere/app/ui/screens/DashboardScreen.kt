@@ -52,8 +52,8 @@ fun DashboardScreen(
         else       -> all
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             // Hero header
             Box(

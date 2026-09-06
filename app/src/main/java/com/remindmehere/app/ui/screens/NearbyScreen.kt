@@ -38,8 +38,8 @@ fun NearbyScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory: 
     val locationReminders by vm.locationReminders.collectAsStateWithLifecycle()
     val active = locationReminders.filter { it.status == ReminderStatus.PENDING }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepNavy), contentAlignment = Alignment.Center) {
-        Column(modifier = Modifier.fillMaxSize().widthIn(max = 600.dp)) {
+    Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             // Header
             Box(

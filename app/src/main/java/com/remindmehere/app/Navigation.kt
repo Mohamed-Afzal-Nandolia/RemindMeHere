@@ -35,6 +35,7 @@ fun MainNavigation() {
         } else {
             Scaffold(
                 containerColor = DeepNavy,
+                contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
                 bottomBar = {
                     BottomNavBar(
                         current = currentDest,
@@ -44,7 +45,7 @@ fun MainNavigation() {
             ) { innerPadding ->
                 AnimatedContent(
                     targetState = currentDest,
-                    modifier = Modifier.padding(innerPadding),
+                    modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
                     transitionSpec = {
                         fadeIn() + slideInHorizontally() togetherWith fadeOut() + slideOutHorizontally()
                     },
