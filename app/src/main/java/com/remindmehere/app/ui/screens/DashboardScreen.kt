@@ -48,7 +48,8 @@ fun DashboardScreen(
     dashboardVm: DashboardViewModel = hiltViewModel(),
     createVm: CreateReminderViewModel = hiltViewModel(),
     onNavigateToHistory: () -> Unit,
-    onNavigateToUpcoming: () -> Unit = {}
+    onNavigateToUpcoming: () -> Unit = {},
+    onNavigateToCategory: (String) -> Unit = {}
 ) {
     val all by dashboardVm.activeReminders.collectAsStateWithLifecycle()
     val today by dashboardVm.todayReminders.collectAsStateWithLifecycle()
@@ -104,12 +105,12 @@ fun DashboardScreen(
             // 2x2 Grid
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DashboardGridCard("Today", Icons.Outlined.Today, today.size, VioletPrimary, filter == "Today", Modifier.weight(1f)) { filter = "Today" }
-                    DashboardGridCard("Scheduled", Icons.Outlined.Schedule, scheduled.size, CyanAccent, filter == "Scheduled", Modifier.weight(1f)) { filter = "Scheduled" }
+                    DashboardGridCard("Today", Icons.Outlined.Today, today.size, VioletPrimary, false, Modifier.weight(1f)) { onNavigateToCategory("Today") }
+                    DashboardGridCard("Scheduled", Icons.Outlined.Schedule, scheduled.size, CyanAccent, false, Modifier.weight(1f)) { onNavigateToCategory("Scheduled") }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DashboardGridCard("All", Icons.Outlined.AllInbox, all.size, OnSurface, filter == "All", Modifier.weight(1f)) { filter = "All" }
-                    DashboardGridCard("Completed", Icons.Outlined.CheckCircle, completed.size, OnSurfaceMuted, filter == "Completed", Modifier.weight(1f)) { filter = "Completed" }
+                    DashboardGridCard("All", Icons.Outlined.AllInbox, all.size, OnSurface, false, Modifier.weight(1f)) { onNavigateToCategory("All") }
+                    DashboardGridCard("Completed", Icons.Outlined.CheckCircle, completed.size, OnSurfaceMuted, false, Modifier.weight(1f)) { onNavigateToCategory("Completed") }
                 }
             }
 

@@ -21,6 +21,7 @@ class ReminderRepository @Inject constructor(
     suspend fun deleteById(id: Long) = dao.deleteById(id)
     suspend fun markDone(id: Long) = dao.updateStatus(id, ReminderStatus.DONE)
     suspend fun markTriggered(id: Long) = dao.updateStatus(id, ReminderStatus.TRIGGERED)
+    suspend fun markPending(id: Long) = dao.updateStatus(id, ReminderStatus.PENDING)
     suspend fun getPendingReminders(): List<Reminder> = dao.getPendingReminders()
     suspend fun getById(id: Long): Reminder? = dao.getById(id)
 }

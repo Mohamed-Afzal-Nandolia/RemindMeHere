@@ -11,27 +11,31 @@ import com.remindmehere.app.ui.components.BottomNavDest
 import com.remindmehere.app.ui.screens.DashboardScreen
 import com.remindmehere.app.ui.screens.NearbyScreen
 import com.remindmehere.app.ui.screens.UpcomingScreen
-
 import com.remindmehere.app.ui.screens.HistoryScreen
+import com.remindmehere.app.ui.screens.CategoryListScreen
 
 @Composable
 fun MainNavigation() {
     var currentDest by remember { mutableStateOf<BottomNavDest>(BottomNavDest.Upcoming) }
-    var showHistory by remember { mutableStateOf(false) }
+    var fullScreenDest by remember { mutableStateOf<String?>(null) }
 
     AnimatedContent(
-        targetState = showHistory,
+        targetState = fullScreenDest,
         transitionSpec = {
-            if (targetState) {
+            if (targetState != null) {
                 slideInHorizontally(initialOffsetX = { it }) + fadeIn() togetherWith fadeOut()
             } else {
                 fadeIn() togetherWith slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
             }
         },
         label = "main_nav"
-    ) { history ->
-        if (history) {
-            HistoryScreen(onBack = { showHistory = false })
+    ) { destStr ->
+        if (destStr != null) {
+            if (destStr == "Completed") {
+                HistoryScreen(onBack = { fullScreenDest = null })
+            } else {
+                CategoryListScreen(category = destStr, onBack = { fullScreenDest = null })
+            }
         } else {
             Scaffold(
                 containerColor = DeepNavy,
@@ -52,9 +56,13 @@ fun MainNavigation() {
                     label = "nav"
                 ) { dest ->
                     when (dest) {
-                        BottomNavDest.Dashboard -> DashboardScreen(onNavigateToHistory = { showHistory = true }, onNavigateToUpcoming = { currentDest = BottomNavDest.Upcoming })
-                        BottomNavDest.Upcoming  -> UpcomingScreen(onNavigateToHistory = { showHistory = true })
-                        BottomNavDest.Nearby    -> NearbyScreen(onNavigateToHistory = { showHistory = true })
+                        BottomNavDest.Dashboard -> DashboardScreen(
+                            onNavigateToHistory = { fullScreenDest = "Completed" },
+                            onNavigateToUpcoming = { currentDest = BottomNavDest.Upcoming },
+                            onNavigateToCategory = { cat -> fullScreenDest = cat }
+                        )
+                        BottomNavDest.Upcoming  -> UpcomingScreen(onNavigateToHistory = { fullScreenDest = "Completed" })
+                        BottomNavDest.Nearby    -> NearbyScreen(onNavigateToHistory = { fullScreenDest = "Completed" })
                     }
                 }
             }

@@ -118,6 +118,24 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    fun clearHistory(history: List<Reminder>) {
+        viewModelScope.launch {
+            history.forEach { repository.deleteReminder(it) }
+        }
+    }
+
+    fun markIncomplete(reminders: List<Reminder>) {
+        viewModelScope.launch {
+            reminders.forEach { repository.markPending(it.id) }
+        }
+    }
+
+    fun deleteMultiple(reminders: List<Reminder>) {
+        viewModelScope.launch {
+            reminders.forEach { repository.deleteReminder(it) }
+        }
+    }
+
     private fun isGmsAvailable() =
         GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS
 }
