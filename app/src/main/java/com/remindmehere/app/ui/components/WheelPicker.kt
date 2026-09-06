@@ -202,3 +202,53 @@ fun WheelDateTimePicker(
     }
 }
 
+@Composable
+fun WheelTimePicker(
+    initialTime: Long,
+    onTimeChanged: (Long) -> Unit
+) {
+    var calendar by remember { mutableStateOf(Calendar.getInstance().apply { timeInMillis = initialTime }) }
+    
+    val hours = (1..12).toList()
+    val minutes = (0..59).toList()
+    val amPm = listOf("AM", "PM")
+
+    // Time Wheels
+    Row(
+        modifier = Modifier.fillMaxWidth(0.8f).padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        val currentHour = calendar.get(Calendar.HOUR)
+        WheelPicker<Int>(
+            items = hours,
+            initialIndex = if (currentHour == 0) 11 else currentHour - 1,
+            modifier = Modifier.weight(1f),
+            onItemSelected = { _, hour ->
+                calendar.set(Calendar.HOUR, if (hour == 12) 0 else hour)
+                onTimeChanged(calendar.timeInMillis)
+            }
+        ) { Text(it.toString().padStart(2, '0'), fontSize = 18.sp, color = Color.White) }
+        
+        Text(":", fontSize = 24.sp, color = Color.White, modifier = Modifier.align(Alignment.CenterVertically))
+        
+        WheelPicker<Int>(
+            items = minutes,
+            initialIndex = calendar.get(Calendar.MINUTE),
+            modifier = Modifier.weight(1f),
+            onItemSelected = { _, min ->
+                calendar.set(Calendar.MINUTE, min)
+                onTimeChanged(calendar.timeInMillis)
+            }
+        ) { Text(it.toString().padStart(2, '0'), fontSize = 18.sp, color = Color.White) }
+        
+        WheelPicker<String>(
+            items = amPm,
+            initialIndex = calendar.get(Calendar.AM_PM),
+            modifier = Modifier.weight(1f),
+            onItemSelected = { idx, _ ->
+                calendar.set(Calendar.AM_PM, idx)
+                onTimeChanged(calendar.timeInMillis)
+            }
+        ) { Text(it, fontSize = 18.sp, color = Color.White) }
+    }
+}

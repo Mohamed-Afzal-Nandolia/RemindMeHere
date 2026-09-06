@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ReminderDao {
 
-    @Query("SELECT * FROM reminders ORDER BY createdAt DESC")
+    @Query("SELECT * FROM reminders ORDER BY triggerAt IS NULL, triggerAt ASC, createdAt DESC")
     fun getAllReminders(): Flow<List<Reminder>>
 
     @Query("SELECT * FROM reminders WHERE type = 'TIME' AND status != 'DONE' ORDER BY triggerAt ASC")

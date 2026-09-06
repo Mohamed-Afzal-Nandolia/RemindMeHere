@@ -239,6 +239,9 @@ private fun StepTwo(
     onRadiusChange: (Float) -> Unit,
     context: android.content.Context
 ) {
+    var expandDate by remember(hasDate) { mutableStateOf(hasDate) }
+    var expandTime by remember(hasTime) { mutableStateOf(hasTime) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -271,7 +274,10 @@ private fun StepTwo(
                     ) {
                         // Date Toggle
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { if (hasDate) expandDate = !expandDate }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = VioletLight)
@@ -287,9 +293,10 @@ private fun StepTwo(
                             })
                         }
                         
-                        AnimatedVisibility(visible = hasDate) {
+                        AnimatedVisibility(visible = expandDate && hasDate) {
                             // DatePicker
                             val datePickerState = rememberDatePickerState(initialSelectedDateMillis = triggerAt ?: System.currentTimeMillis())
+                            var lastSelectedDate by remember { mutableStateOf(datePickerState.selectedDateMillis) }
                             LaunchedEffect(datePickerState.selectedDateMillis) {
                                 datePickerState.selectedDateMillis?.let { dateMillis ->
                                     val calendar = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
@@ -297,6 +304,11 @@ private fun StepTwo(
                                     calendar.set(Calendar.YEAR, newDateCal.get(Calendar.YEAR))
                                     calendar.set(Calendar.DAY_OF_YEAR, newDateCal.get(Calendar.DAY_OF_YEAR))
                                     onTimeChange(calendar.timeInMillis)
+                                }
+                                if (lastSelectedDate != datePickerState.selectedDateMillis) {
+                                    lastSelectedDate = datePickerState.selectedDateMillis
+                                    expandDate = false
+                                    expandTime = true
                                 }
                             }
                             DatePicker(
@@ -330,7 +342,10 @@ private fun StepTwo(
 
                         // Time Toggle
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { if (hasTime) expandTime = !expandTime }
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(Icons.Outlined.Schedule, contentDescription = null, tint = VioletLight)
@@ -346,34 +361,12 @@ private fun StepTwo(
                             })
                         }
                         
-                        AnimatedVisibility(visible = hasTime) {
+                        AnimatedVisibility(visible = expandTime && hasTime) {
                             // TimePicker
-                            val cal = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
-                            val timePickerState = rememberTimePickerState(
-                                initialHour = cal.get(Calendar.HOUR_OF_DAY),
-                                initialMinute = cal.get(Calendar.MINUTE),
-                                is24Hour = false
-                            )
-                            LaunchedEffect(timePickerState.hour, timePickerState.minute) {
-                                val calendar = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
-                                calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
-                                calendar.set(Calendar.MINUTE, timePickerState.minute)
-                                onTimeChange(calendar.timeInMillis)
-                            }
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                TimePicker(
-                                    state = timePickerState,
-                                    colors = TimePickerDefaults.colors(
-                                        clockDialColor = NavySurface,
-                                        clockDialSelectedContentColor = OnPrimary,
-                                        clockDialUnselectedContentColor = OnSurface,
-                                        selectorColor = VioletPrimary,
-                                        containerColor = NavyContainer,
-                                        timeSelectorSelectedContainerColor = VioletPrimary.copy(0.3f),
-                                        timeSelectorUnselectedContainerColor = NavySurface,
-                                        timeSelectorSelectedContentColor = VioletPrimary,
-                                        timeSelectorUnselectedContentColor = OnSurface
-                                    )
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                WheelTimePicker(
+                                    initialTime = triggerAt ?: System.currentTimeMillis(),
+                                    onTimeChanged = onTimeChange
                                 )
                             }
                         }
