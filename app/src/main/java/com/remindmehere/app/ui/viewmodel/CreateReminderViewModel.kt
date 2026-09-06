@@ -33,7 +33,8 @@ data class CreateReminderState(
     val placeName: String = "",
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val id: Long? = null
 )
 
 @HiltViewModel
@@ -65,6 +66,7 @@ class CreateReminderViewModel @Inject constructor(
         _state.value = s.copy(isLoading = true, error = null)
         viewModelScope.launch {
             val reminder = Reminder(
+                id = s.id ?: 0L,
                 title = s.title.trim(),
                 note = s.note.trim(),
                 type = s.type,
@@ -72,10 +74,12 @@ class CreateReminderViewModel @Inject constructor(
                 latitude = s.latitude,
                 longitude = s.longitude,
                 radiusMeters = s.radiusMeters,
-                placeName = s.placeName
+                placeName = s.placeName,
+                status = com.remindmehere.app.data.model.ReminderStatus.PENDING
             )
-            val id = repository.addReminder(reminder)
-            val saved = reminder.copy(id = id)
+            
+            val savedId = if (s.id == null) repository.addReminder(reminder) else { repository.updateReminder(reminder); s.id }
+            val saved = reminder.copy(id = savedId)
 
             when (s.type) {
                 ReminderType.TIME -> alarmScheduler.schedule(saved)
@@ -99,6 +103,20 @@ class CreateReminderViewModel @Inject constructor(
 
     fun clearError() { _state.value = _state.value.copy(error = null) }
     fun reset() { _state.value = CreateReminderState() }
+
+    fun loadReminder(r: Reminder) {
+        _state.value = CreateReminderState(
+            id = r.id,
+            title = r.title,
+            note = r.note,
+            type = r.type,
+            triggerAt = r.triggerAt,
+            latitude = r.latitude,
+            longitude = r.longitude,
+            radiusMeters = r.radiusMeters,
+            placeName = r.placeName
+        )
+    }
 
     private fun isGmsAvailable() =
         GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS

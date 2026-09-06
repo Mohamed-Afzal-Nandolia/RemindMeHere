@@ -16,7 +16,7 @@ import com.remindmehere.app.ui.screens.HistoryScreen
 
 @Composable
 fun MainNavigation() {
-    var currentDest by remember { mutableStateOf<BottomNavDest>(BottomNavDest.Dashboard) }
+    var currentDest by remember { mutableStateOf<BottomNavDest>(BottomNavDest.Upcoming) }
     var showHistory by remember { mutableStateOf(false) }
 
     AnimatedContent(
@@ -52,7 +52,7 @@ fun MainNavigation() {
                     label = "nav"
                 ) { dest ->
                     when (dest) {
-                        BottomNavDest.Dashboard -> DashboardScreen(onNavigateToHistory = { showHistory = true })
+                        BottomNavDest.Dashboard -> DashboardScreen(onNavigateToHistory = { showHistory = true }, onNavigateToUpcoming = { currentDest = BottomNavDest.Upcoming })
                         BottomNavDest.Upcoming  -> UpcomingScreen(onNavigateToHistory = { showHistory = true })
                         BottomNavDest.Nearby    -> NearbyScreen(onNavigateToHistory = { showHistory = true })
                     }

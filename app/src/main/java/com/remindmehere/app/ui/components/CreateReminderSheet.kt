@@ -162,7 +162,7 @@ fun CreateReminderSheet(
                                 color = OnPrimary
                             )
                         } else {
-                            Text(if (step == 1) "Next" else "Save Reminder")
+                            Text(if (step == 1) "Next" else if (state.id != null) "Update Reminder" else "Save Reminder")
                         }
                     }
                 }

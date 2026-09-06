@@ -45,7 +45,10 @@ import java.util.*
 @Composable
 fun ReminderCard(
     reminder: Reminder,
+    isQueuedForDone: Boolean = false,
+    onClick: () -> Unit = {},
     onMarkDone: (Reminder) -> Unit,
+    onUnmarkDone: (Reminder) -> Unit = {},
     onDelete: (Reminder) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -62,7 +65,7 @@ fun ReminderCard(
         visible = !isDeleted,
         exit = shrinkVertically() + fadeOut() + slideOutHorizontally(targetOffsetX = { -it })
     ) {
-        val isDone = reminder.status == ReminderStatus.DONE
+        val isDone = reminder.status == ReminderStatus.DONE || isQueuedForDone
         val isTriggered = reminder.status == ReminderStatus.TRIGGERED
 
         val cardAlpha by animateFloatAsState(if (isDone) 0.5f else 1f, label = "alpha")
@@ -140,6 +143,10 @@ fun ReminderCard(
                             detectTapGestures(
                                 onTap = { isRevealed = false }
                             )
+                        } else {
+                            detectTapGestures(
+                                onTap = { onClick() }
+                            )
                         }
                     }
                     .border(
@@ -157,7 +164,13 @@ fun ReminderCard(
             ) {
                 // Radio button for checkmark
                 IconButton(
-                    onClick = { if (!isDone) onMarkDone(reminder) },
+                    onClick = {
+                        when {
+                            isQueuedForDone -> onUnmarkDone(reminder)   // cancel the pending mark
+                            !isDone -> onMarkDone(reminder)             // start the 2-sec queue
+                            // if truly done (in DB), do nothing
+                        }
+                    },
                     modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
@@ -176,8 +189,7 @@ fun ReminderCard(
                         text = reminder.title,
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp,
-                            textDecoration = if (isDone) TextDecoration.LineThrough else TextDecoration.None
+                            fontSize = 15.sp
                         ),
                         color = if (isDone) OnSurfaceMuted else OnSurface,
                         maxLines = 2,

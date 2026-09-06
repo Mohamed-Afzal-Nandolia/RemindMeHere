@@ -14,6 +14,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.Today
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.AllInbox
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,18 +47,23 @@ import com.remindmehere.app.ui.viewmodel.DashboardViewModel
 fun DashboardScreen(
     dashboardVm: DashboardViewModel = hiltViewModel(),
     createVm: CreateReminderViewModel = hiltViewModel(),
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onNavigateToUpcoming: () -> Unit = {}
 ) {
     val all by dashboardVm.activeReminders.collectAsStateWithLifecycle()
-    val time by dashboardVm.timeReminders.collectAsStateWithLifecycle()
-    val loc by dashboardVm.locationReminders.collectAsStateWithLifecycle()
+    val today by dashboardVm.todayReminders.collectAsStateWithLifecycle()
+    val scheduled by dashboardVm.scheduledReminders.collectAsStateWithLifecycle()
+    val completed by dashboardVm.historyReminders.collectAsStateWithLifecycle()
+    val queuedDone by dashboardVm.queuedMarkDoneIds.collectAsStateWithLifecycle()
+
     var showSheet by remember { mutableStateOf(false) }
     var filter by remember { mutableStateOf("All") }
 
     val displayed = when (filter) {
-        "Time"     -> time
-        "Location" -> loc
-        else       -> all
+        "Today"     -> today
+        "Scheduled" -> scheduled
+        "Completed" -> completed
+        else        -> all
     }
 
     Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
@@ -87,64 +101,78 @@ fun DashboardScreen(
                 }
             }
 
-            // Filter chips
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(bottom = 12.dp)
-            ) {
-                val filters = listOf("All", "Time", "Location")
-                items(filters) { f ->
-                    FilterChip(
-                        selected = filter == f,
-                        onClick = { filter = f },
-                        label = { Text(f) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = VioletPrimary,
-                            selectedLabelColor = OnPrimary,
-                            containerColor = NavyContainer,
-                            labelColor = OnSurfaceMuted
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = filter == f,
-                            borderColor = CardBorder,
-                            selectedBorderColor = VioletPrimary
-                        )
-                    )
+            // 2x2 Grid
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DashboardGridCard("Today", Icons.Outlined.Today, today.size, VioletPrimary, filter == "Today", Modifier.weight(1f)) { filter = "Today" }
+                    DashboardGridCard("Scheduled", Icons.Outlined.Schedule, scheduled.size, CyanAccent, filter == "Scheduled", Modifier.weight(1f)) { filter = "Scheduled" }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DashboardGridCard("All", Icons.Outlined.AllInbox, all.size, OnSurface, filter == "All", Modifier.weight(1f)) { filter = "All" }
+                    DashboardGridCard("Completed", Icons.Outlined.CheckCircle, completed.size, OnSurfaceMuted, filter == "Completed", Modifier.weight(1f)) { filter = "Completed" }
                 }
             }
 
-            // Reminder list
-            if (displayed.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("✨", fontSize = 48.sp)
-                        Spacer(Modifier.height(12.dp))
-                        Text("No reminders yet", color = OnSurfaceMuted, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.height(4.dp))
-                        Text("Tap + to add one", color = OnSurfaceMuted.copy(0.6f), style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxSize()
+            Text(
+                text = "My Lists",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = OnSurface,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Reminders List Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clickable { onNavigateToUpcoming() },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = NavyContainer)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(displayed, key = { it.id }) { reminder ->
-                        AnimatedVisibility(
-                            visible = true,
-                            enter = fadeIn() + slideInVertically(),
-                            modifier = Modifier.animateItem()
-                        ) {
-                            ReminderCard(
-                                reminder = reminder,
-                                onMarkDone = { dashboardVm.markDone(it) },
-                                onDelete = { dashboardVm.deleteReminder(it) }
-                            )
-                        }
+                    // Purple circle with list icon
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(VioletPrimary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.List,
+                            contentDescription = "List",
+                            tint = OnPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    Text(
+                        text = "Reminders",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        color = OnSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Text(
+                        text = all.size.toString(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = OnSurfaceMuted
+                    )
+
+                    Spacer(Modifier.width(8.dp))
+
+                    Icon(
+                        imageVector = Icons.Outlined.ChevronRight,
+                        contentDescription = "View list",
+                        tint = OnSurfaceMuted.copy(alpha = 0.5f),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -170,6 +198,34 @@ fun DashboardScreen(
 
         if (showSheet) {
             CreateReminderSheet(viewModel = createVm, onDismiss = { showSheet = false })
+        }
+    }
+}
+
+@Composable
+fun DashboardGridCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    count: Int,
+    iconColor: androidx.compose.ui.graphics.Color,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier.clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = if (selected) NavyContainer else NavySurface),
+        border = BorderStroke(1.dp, if (selected) VioletPrimary else CardBorder),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, tint = iconColor, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.weight(1f))
+                Text(count.toString(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = OnSurface)
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(title, style = MaterialTheme.typography.labelMedium, color = OnSurfaceMuted)
         }
     }
 }

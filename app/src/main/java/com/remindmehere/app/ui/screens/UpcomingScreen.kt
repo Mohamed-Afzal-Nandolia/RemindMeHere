@@ -1,16 +1,23 @@
 package com.remindmehere.app.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,16 +27,35 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.remindmehere.app.data.model.ReminderStatus
 import com.remindmehere.app.theme.*
 import com.remindmehere.app.ui.components.ReminderCard
+import com.remindmehere.app.ui.components.CreateReminderSheet
+import com.remindmehere.app.ui.viewmodel.CreateReminderViewModel
 import com.remindmehere.app.ui.viewmodel.DashboardViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory: () -> Unit) {
-    val reminders by vm.timeReminders.collectAsStateWithLifecycle()
-    val pending = reminders.filter { it.status == ReminderStatus.PENDING }
-    val triggered = reminders.filter { it.status == ReminderStatus.TRIGGERED }
+fun UpcomingScreen(
+    vm: DashboardViewModel = hiltViewModel(),
+    createVm: CreateReminderViewModel = hiltViewModel(),
+    onNavigateToHistory: () -> Unit
+) {
+    val allReminders by vm.activeReminders.collectAsStateWithLifecycle()
+    val timeReminders by vm.timeReminders.collectAsStateWithLifecycle()
+    val locReminders by vm.locationReminders.collectAsStateWithLifecycle()
+    val queuedDone by vm.queuedMarkDoneIds.collectAsStateWithLifecycle()
+
+    var filter by remember { mutableStateOf("All") }
+    var showSheet by remember { mutableStateOf(false) }
+
+    val displayed = when (filter) {
+        "Time" -> timeReminders
+        "Location" -> locReminders
+        else -> allReminders
+    }
+
+    val pending = displayed.filter { it.status == ReminderStatus.PENDING }
+    val triggered = displayed.filter { it.status == ReminderStatus.TRIGGERED }
 
     Box(modifier = Modifier.fillMaxSize().background(DeepNavy)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -53,19 +79,47 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Time-based reminders",
+                        text = "All your pending reminders",
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                         color = OnSurface
                     )
                 }
             }
 
-            if (reminders.isEmpty()) {
+            // Filter chips
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                val filters = listOf("All", "Time", "Location")
+                items(filters) { f ->
+                    FilterChip(
+                        selected = filter == f,
+                        onClick = { filter = f },
+                        label = { Text(f) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = VioletPrimary,
+                            selectedLabelColor = OnPrimary,
+                            containerColor = NavyContainer,
+                            labelColor = OnSurfaceMuted
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = filter == f,
+                            borderColor = CardBorder,
+                            selectedBorderColor = VioletPrimary
+                        )
+                    )
+                }
+            }
+
+            if (displayed.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("⏰", fontSize = 48.sp)
                         Spacer(Modifier.height(12.dp))
-                        Text("No time reminders", color = OnSurfaceMuted, style = MaterialTheme.typography.bodyLarge)
+                        Text("No upcoming reminders", color = OnSurfaceMuted, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
             } else {
@@ -79,7 +133,17 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory
                         }
                         items(pending, key = { it.id }) { reminder ->
                             Column(modifier = Modifier.animateItem()) {
-                                ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                                ReminderCard(
+                                    reminder = reminder,
+                                    isQueuedForDone = queuedDone.contains(reminder.id),
+                                    onClick = {
+                                        createVm.loadReminder(reminder)
+                                        showSheet = true
+                                    },
+                                    onMarkDone = { vm.queueMarkDone(it) },
+                                    onUnmarkDone = { vm.unqueueMarkDone(it) },
+                                    onDelete = { vm.deleteReminder(it) }
+                                )
                                 reminder.triggerAt?.let { at ->
                                     val diff = at - System.currentTimeMillis()
                                     val label = when {
@@ -103,12 +167,44 @@ fun UpcomingScreen(vm: DashboardViewModel = hiltViewModel(), onNavigateToHistory
                         item { Spacer(Modifier.height(8.dp)); SectionLabel("Triggered (${triggered.size})") }
                         items(triggered, key = { it.id }) { reminder ->
                             Box(modifier = Modifier.animateItem()) {
-                                ReminderCard(reminder, onMarkDone = { vm.markDone(it) }, onDelete = { vm.deleteReminder(it) })
+                                ReminderCard(
+                                    reminder = reminder,
+                                    isQueuedForDone = queuedDone.contains(reminder.id),
+                                    onClick = {
+                                        createVm.loadReminder(reminder)
+                                        showSheet = true
+                                    },
+                                    onMarkDone = { vm.queueMarkDone(it) },
+                                    onUnmarkDone = { vm.unqueueMarkDone(it) },
+                                    onDelete = { vm.deleteReminder(it) }
+                                )
                             }
                         }
                     }
                 }
             }
+        }
+        if (showSheet) {
+            CreateReminderSheet(viewModel = createVm, onDismiss = { showSheet = false })
+        }
+
+        // FAB
+        val interactionSource = remember { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+        val scale by animateFloatAsState(targetValue = if (isPressed) 0.85f else 1f, label = "fabScale")
+
+        FloatingActionButton(
+            onClick = { createVm.reset(); showSheet = true },
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(24.dp)
+                .scale(scale),
+            containerColor = VioletPrimary,
+            contentColor = OnPrimary,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = "Add Reminder", modifier = Modifier.size(24.dp))
         }
     }
 }
