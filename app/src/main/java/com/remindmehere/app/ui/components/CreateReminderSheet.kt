@@ -111,11 +111,15 @@ fun CreateReminderSheet(
                         2 -> StepTwo(
                             type = state.type,
                             triggerAt = state.triggerAt,
+                            hasDate = state.hasDate,
+                            hasTime = state.hasTime,
                             radiusMeters = state.radiusMeters,
                             pickedLat = state.latitude,
                             pickedLng = state.longitude,
                             onTypeChange = viewModel::updateType,
                             onTimeChange = viewModel::updateTriggerAt,
+                            onHasDateChange = viewModel::updateHasDate,
+                            onHasTimeChange = viewModel::updateHasTime,
                             onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) },
                             onRadiusChange = viewModel::updateRadius,
                             context = context
@@ -217,15 +221,20 @@ private fun StepOne(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StepTwo(
     type: ReminderType,
     triggerAt: Long?,
+    hasDate: Boolean,
+    hasTime: Boolean,
     radiusMeters: Float,
     pickedLat: Double?,
     pickedLng: Double?,
     onTypeChange: (ReminderType) -> Unit,
-    onTimeChange: (Long) -> Unit,
+    onTimeChange: (Long?) -> Unit,
+    onHasDateChange: (Boolean) -> Unit,
+    onHasTimeChange: (Boolean) -> Unit,
     onLocationChange: (Double, Double) -> Unit,
     onRadiusChange: (Float) -> Unit,
     context: android.content.Context
@@ -260,16 +269,114 @@ private fun StepTwo(
                             .border(1.dp, VioletPrimary.copy(0.3f), RoundedCornerShape(12.dp))
                             .padding(vertical = 12.dp)
                     ) {
-                        Text(
-                            text = "Select Date & Time",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = OnSurfaceMuted,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                        WheelDateTimePicker(
-                            initialTime = triggerAt ?: System.currentTimeMillis(),
-                            onTimeChanged = onTimeChange
-                        )
+                        // Date Toggle
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.CalendarToday, contentDescription = null, tint = VioletLight)
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Date", style = MaterialTheme.typography.bodyLarge, color = OnSurface)
+                                val dateText = if (hasDate && triggerAt != null) SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(triggerAt)) else "None"
+                                Text(dateText, style = MaterialTheme.typography.bodySmall, color = VioletPrimary)
+                            }
+                            Switch(checked = hasDate, onCheckedChange = { 
+                                onHasDateChange(it)
+                                if (it && triggerAt == null) onTimeChange(System.currentTimeMillis())
+                            })
+                        }
+                        
+                        AnimatedVisibility(visible = hasDate) {
+                            // DatePicker
+                            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = triggerAt ?: System.currentTimeMillis())
+                            LaunchedEffect(datePickerState.selectedDateMillis) {
+                                datePickerState.selectedDateMillis?.let { dateMillis ->
+                                    val calendar = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
+                                    val newDateCal = Calendar.getInstance().apply { timeInMillis = dateMillis }
+                                    calendar.set(Calendar.YEAR, newDateCal.get(Calendar.YEAR))
+                                    calendar.set(Calendar.DAY_OF_YEAR, newDateCal.get(Calendar.DAY_OF_YEAR))
+                                    onTimeChange(calendar.timeInMillis)
+                                }
+                            }
+                            DatePicker(
+                                state = datePickerState,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = DatePickerDefaults.colors(
+                                    containerColor = NavyContainer,
+                                    titleContentColor = OnSurface,
+                                    headlineContentColor = OnSurface,
+                                    weekdayContentColor = OnSurfaceMuted,
+                                    subheadContentColor = OnSurfaceMuted,
+                                    yearContentColor = OnSurfaceMuted,
+                                    currentYearContentColor = VioletPrimary,
+                                    selectedYearContentColor = OnPrimary,
+                                    selectedYearContainerColor = VioletPrimary,
+                                    dayContentColor = OnSurface,
+                                    selectedDayContentColor = OnPrimary,
+                                    selectedDayContainerColor = VioletPrimary,
+                                    todayContentColor = VioletPrimary,
+                                    todayDateBorderColor = VioletPrimary
+                                ),
+                                title = null,
+                                headline = null,
+                                showModeToggle = false
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(color = CardBorder, modifier = Modifier.padding(horizontal = 16.dp))
+                        Spacer(Modifier.height(8.dp))
+
+                        // Time Toggle
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Schedule, contentDescription = null, tint = VioletLight)
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Time", style = MaterialTheme.typography.bodyLarge, color = OnSurface)
+                                val timeText = if (hasTime && triggerAt != null) SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(triggerAt)) else "None"
+                                Text(timeText, style = MaterialTheme.typography.bodySmall, color = VioletPrimary)
+                            }
+                            Switch(checked = hasTime, onCheckedChange = { 
+                                onHasTimeChange(it)
+                                if (it && triggerAt == null) onTimeChange(System.currentTimeMillis())
+                            })
+                        }
+                        
+                        AnimatedVisibility(visible = hasTime) {
+                            // TimePicker
+                            val cal = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
+                            val timePickerState = rememberTimePickerState(
+                                initialHour = cal.get(Calendar.HOUR_OF_DAY),
+                                initialMinute = cal.get(Calendar.MINUTE),
+                                is24Hour = false
+                            )
+                            LaunchedEffect(timePickerState.hour, timePickerState.minute) {
+                                val calendar = Calendar.getInstance().apply { timeInMillis = triggerAt ?: System.currentTimeMillis() }
+                                calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                                calendar.set(Calendar.MINUTE, timePickerState.minute)
+                                onTimeChange(calendar.timeInMillis)
+                            }
+                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                TimePicker(
+                                    state = timePickerState,
+                                    colors = TimePickerDefaults.colors(
+                                        clockDialColor = NavySurface,
+                                        clockDialSelectedContentColor = OnPrimary,
+                                        clockDialUnselectedContentColor = OnSurface,
+                                        selectorColor = VioletPrimary,
+                                        containerColor = NavyContainer,
+                                        timeSelectorSelectedContainerColor = VioletPrimary.copy(0.3f),
+                                        timeSelectorUnselectedContainerColor = NavySurface,
+                                        timeSelectorSelectedContentColor = VioletPrimary,
+                                        timeSelectorUnselectedContentColor = OnSurface
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
                 ReminderType.LOCATION -> {

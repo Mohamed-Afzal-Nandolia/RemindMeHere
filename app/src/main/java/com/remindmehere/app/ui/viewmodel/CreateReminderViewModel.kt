@@ -26,6 +26,8 @@ data class CreateReminderState(
     val type: ReminderType = ReminderType.TIME,
     // Time
     val triggerAt: Long? = null,
+    val hasDate: Boolean = false,
+    val hasTime: Boolean = false,
     // Location
     val latitude: Double? = null,
     val longitude: Double? = null,
@@ -51,7 +53,9 @@ class CreateReminderViewModel @Inject constructor(
     fun updateTitle(v: String)   { _state.value = _state.value.copy(title = v) }
     fun updateNote(v: String)    { _state.value = _state.value.copy(note = v) }
     fun updateType(v: ReminderType) { _state.value = _state.value.copy(type = v) }
-    fun updateTriggerAt(v: Long) { _state.value = _state.value.copy(triggerAt = v) }
+    fun updateTriggerAt(v: Long?) { _state.value = _state.value.copy(triggerAt = v) }
+    fun updateHasDate(v: Boolean) { _state.value = _state.value.copy(hasDate = v) }
+    fun updateHasTime(v: Boolean) { _state.value = _state.value.copy(hasTime = v) }
     fun updateLocation(lat: Double, lng: Double, place: String = "") {
         _state.value = _state.value.copy(latitude = lat, longitude = lng, placeName = place)
     }
@@ -60,7 +64,9 @@ class CreateReminderViewModel @Inject constructor(
     fun save() {
         val s = _state.value
         if (s.title.isBlank()) { _state.value = s.copy(error = "Title cannot be empty"); return }
-        if (s.type == ReminderType.TIME && s.triggerAt == null) { _state.value = s.copy(error = "Please pick a date and time"); return }
+        // For TIME reminders, allow saving even if both are false, but warn if required?
+        // Let's allow saving as Inbox/Anytime if both are false.
+        
         if (s.type == ReminderType.LOCATION && (s.latitude == null || s.longitude == null)) { _state.value = s.copy(error = "Please pin a location on the map"); return }
 
         _state.value = s.copy(isLoading = true, error = null)
@@ -105,12 +111,16 @@ class CreateReminderViewModel @Inject constructor(
     fun reset() { _state.value = CreateReminderState() }
 
     fun loadReminder(r: Reminder) {
+        val hasDate = r.triggerAt != null // In a real app we'd differentiate if time was stored
+        val hasTime = r.triggerAt != null
         _state.value = CreateReminderState(
             id = r.id,
             title = r.title,
             note = r.note,
             type = r.type,
             triggerAt = r.triggerAt,
+            hasDate = hasDate,
+            hasTime = hasTime,
             latitude = r.latitude,
             longitude = r.longitude,
             radiusMeters = r.radiusMeters,
